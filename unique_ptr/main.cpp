@@ -2,7 +2,7 @@
  * @Author: liuxin
  * @Date:   2022-11-07 16:37:10
  * @Last Modified by:   liuxin
- * @Last Modified time: 2022-11-07 20:19:10
+ * @Last Modified time: 2022-11-07 22:02:44
  */
 #include <iostream>
 #include <memory>
@@ -48,6 +48,31 @@ void my_dealloc(int *p) {
     delete p;
 }
 
+void pass_up1(int& value) {
+    cout << "In pass_up1: " << value << endl;
+}
+
+void pass_up2(int* up) {
+    cout << "In pass_up2: " << *up << endl;
+}
+
+void pass_up3(unique_ptr<int>& up) {
+    cout << "In pass_up3: " << *up << endl;
+    up.reset();
+}
+
+void pass_up4(unique_ptr<int> up) {
+    cout << "In pass_up4: " << *up << endl;
+}
+
+unique_ptr<int> return_uptr(int value) {
+    unique_ptr<int> up = make_unique<int>(value);
+    // NRVO
+    // The compiler automatically uses the move construction/ rvalue
+    // return up;
+    return std::move(up);
+}
+
 int main(int argc, char const *argv[])
 {
     cout << "Now in main." << endl;
@@ -66,12 +91,23 @@ int main(int argc, char const *argv[])
     // initial by {}
     int *a = new int{5};
     int *b = new int[5];
-    
     cout << "*a = " << *a << endl;  //print 5
     cout << "*b = " << *b << endl;  //print 0
     
     // The unique_ptr binding release function is at compile time
     // The shared_ptr binding release function is at running time
     unique_ptr<int, decltype(&my_dealloc)> cup {my_alloc(100), my_dealloc};
+
+    auto up = make_unique<int>(123);
+    // pass_up1(*up);
+    // pass_up2(up.get());
+    // pass_up3(up);
+    // if (up == nullptr) cout << "up is reset." << endl;
+    pass_up4(std::move(up));
+    if (up == nullptr) cout << "up is moved." << endl;
+
+    unique_ptr<int> up2 = return_uptr(456);
+    cout << "up2 is " << *up2 << endl;
+    
     return 0;
 }
